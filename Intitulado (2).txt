@@ -1,0 +1,945 @@
+-- CHEIXHUB - MM2 Script (Based on VexonHub)
+-- UI: https://github.com/3345-c-a-t-s-u-s/NOTHING
+
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+
+-- Cargar la nueva UI CHEIXHUB
+local CHEIXHUB_UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/3345-c-a-t-s-u-s/NOTHING/main/UI.lua"))()
+
+-- Función para obtener el mapa
+function getMap()
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj:FindFirstChild("CoinContainer") and obj:FindFirstChild("Spawns") then
+            return obj
+        end
+    end
+    return nil
+end
+
+-- Función para obtener el murderer
+local function getMurderer()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character and player.Backpack and 
+           (player.Character:FindFirstChild("Knife") or player.Backpack:FindFirstChild("Knife")) then
+            return player
+        end
+    end
+    return nil
+end
+
+-- Función para obtener el sheriff
+local function getSheriff()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character and player.Backpack and 
+           (player.Character:FindFirstChild("Gun") or player.Backpack:FindFirstChild("Gun")) then
+            return player
+        end
+    end
+    return nil
+end
+
+-- Crear ventana principal CHEIXHUB
+local Window = CHEIXHUB_UI:Window({
+    Title = "CHEIXHUB | MM2",
+    Center = true,
+    AutoShow = true,
+    TabPadding = 5,
+    MenuFadeTime = 0
+})
+
+-- Tab: Main
+local MainTab = Window:Tab({
+    Name = "Main",
+    Icon = "rbxassetid://9405923687"
+})
+
+-- Sección: Murder
+MainTab:Section({Name = "Murder"})
+
+MainTab:Toggle({
+    Name = "Auto Kill All",
+    Flag = "AutoKillAll",
+    Callback = function(state)
+        if state then
+            local murderer = getMurderer()
+            if murderer ~= localPlayer then
+                CHEIXHUB_UI:Notify({
+                    Title = "CHEIXHUB",
+                    Content = "You are not the murderer!",
+                    Duration = 5
+                })
+                return
+            end
+            
+            if not localPlayer.Character:FindFirstChild("Knife") then
+                if not localPlayer.Backpack:FindFirstChild("Knife") then
+                    CHEIXHUB_UI:Notify({
+                        Title = "CHEIXHUB",
+                        Content = "You don't have the knife!",
+                        Duration = 5
+                    })
+                    return
+                end
+                localPlayer.Character.Humanoid:EquipTool(localPlayer.Backpack.Knife)
+            end
+            
+            local targets = {}
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = player.Character.HumanoidRootPart
+                    hrp.Anchored = true
+                    table.insert(targets, hrp)
+                    hrp.CFrame = localPlayer.Character.HumanoidRootPart.CFrame + 
+                                localPlayer.Character.HumanoidRootPart.CFrame.LookVector * 1
+                end
+            end
+            
+            localPlayer.Character.Knife.Stab:FireServer("Slash")
+            
+            task.delay(2, function()
+                for _, hrp in ipairs(targets) do
+                    if hrp and hrp.Parent then
+                        hrp.Anchored = false
+                    end
+                end
+            end)
+        end
+    end
+})
+
+MainTab:Toggle({
+    Name = "Auto Kill Sheriff",
+    Flag = "AutoKillSheriff",
+    Callback = function(state)
+        if state then
+            if getMurderer() ~= localPlayer then
+                CHEIXHUB_UI:Notify({
+                    Title = "CHEIXHUB",
+                    Content = "You are not the murderer!",
+                    Duration = 5
+                })
+                return
+            end
+            
+            if not localPlayer.Character:FindFirstChild("Knife") then
+                if not localPlayer.Backpack:FindFirstChild("Knife") then
+                    CHEIXHUB_UI:Notify({
+                        Title = "CHEIXHUB",
+                        Content = "You don't have the knife!",
+                        Duration = 5
+                    })
+                    return
+                end
+                localPlayer.Character.Humanoid:EquipTool(localPlayer.Backpack.Knife)
+            end
+            
+            local sheriff = getSheriff()
+            if not sheriff then
+                CHEIXHUB_UI:Notify({
+                    Title = "CHEIXHUB",
+                    Content = "Sheriff not found!",
+                    Duration = 5
+                })
+                return
+            end
+            
+            local hrp = sheriff.Character and sheriff.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.Anchored = true
+                hrp.CFrame = localPlayer.Character.HumanoidRootPart.CFrame + 
+                            localPlayer.Character.HumanoidRootPart.CFrame.LookVector * 1
+                localPlayer.Character.Knife.Stab:FireServer("Slash")
+                
+                task.delay(2, function()
+                    if hrp and hrp.Parent then
+                        hrp.Anchored = false
+                    end
+                end)
+            end
+        end
+    end
+})
+
+MainTab:Button({
+    Name = "Kill All Innocents",
+    Callback = function()
+        if getMurderer() ~= localPlayer then
+            CHEIXHUB_UI:Notify({
+                Title = "CHEIXHUB",
+                Content = "You are not the murderer!",
+                Duration = 5
+            })
+            return
+        end
+        
+        if not localPlayer.Character:FindFirstChild("Knife") then
+            if not localPlayer.Backpack:FindFirstChild("Knife") then
+                CHEIXHUB_UI:Notify({
+                    Title = "CHEIXHUB",
+                    Content = "You don't have the knife!",
+                    Duration = 5
+                })
+                return
+            end
+            localPlayer.Character.Humanoid:EquipTool(localPlayer.Backpack.Knife)
+        end
+        
+        local innocents = {}
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local isSheriff = player.Character:FindFirstChild("Gun") or player.Backpack:FindFirstChild("Gun")
+                if not isSheriff then
+                    table.insert(innocents, player.Character.HumanoidRootPart)
+                end
+            end
+        end
+        
+        if #innocents == 0 then
+            CHEIXHUB_UI:Notify({
+                Title = "CHEIXHUB",
+                Content = "No innocents found!",
+                Duration = 5
+            })
+            return
+        end
+        
+        for _, hrp in ipairs(innocents) do
+            hrp.Anchored = true
+            hrp.CFrame = localPlayer.Character.HumanoidRootPart.CFrame + 
+                        localPlayer.Character.HumanoidRootPart.CFrame.LookVector * 1
+        end
+        
+        localPlayer.Character.Knife.Stab:FireServer("Slash")
+        
+        task.delay(2, function()
+            for _, hrp in ipairs(innocents) do
+                if hrp and hrp.Parent then
+                    hrp.Anchored = false
+                end
+            end
+        end)
+    end
+})
+
+-- Kill Aura
+local killAuraEnabled = false
+local killAuraConnection = nil
+local killAuraReach = 7
+local killAuraAngle = 60
+
+MainTab:Toggle({
+    Name = "Kill Aura",
+    Flag = "KillAura",
+    Callback = function(state)
+        killAuraEnabled = state
+        
+        if state then
+            killAuraConnection = RunService.Heartbeat:Connect(function()
+                local char = localPlayer.Character
+                if not char then return end
+                
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local knife = char:FindFirstChild("Knife")
+                
+                if hrp and knife and knife:FindFirstChild("Stab") then
+                    for _, player in ipairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                            local targetHrp = player.Character.HumanoidRootPart
+                            local humanoid = player.Character:FindFirstChild("Humanoid")
+                            
+                            if targetHrp and humanoid and humanoid.Health > 0 then
+                                local distance = (targetHrp.Position - hrp.Position).Magnitude
+                                local dotProduct = (targetHrp.Position - hrp.Position).Unit:Dot(hrp.CFrame.LookVector)
+                                local angle = math.acos(math.clamp(dotProduct, -1, 1))
+                                local angleDeg = math.deg(angle)
+                                
+                                if distance < killAuraReach and angleDeg < killAuraAngle / 2 then
+                                    targetHrp.Anchored = true
+                                    targetHrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 2
+                                    task.wait(0.1)
+                                    knife.Stab:FireServer("Slash")
+                                    task.wait(0.1)
+                                    targetHrp.Anchored = false
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        elseif killAuraConnection then
+            killAuraConnection:Disconnect()
+            killAuraConnection = nil
+        end
+    end
+})
+
+MainTab:Slider({
+    Name = "Kill Aura Reach",
+    Flag = "KillAuraReach",
+    Min = 0,
+    Max = 30,
+    Default = 7,
+    Callback = function(value)
+        killAuraReach = value
+    end
+})
+
+MainTab:Slider({
+    Name = "Kill Aura Angle",
+    Flag = "KillAuraAngle",
+    Min = 0,
+    Max = 360,
+    Default = 60,
+    Callback = function(value)
+        killAuraAngle = value
+    end
+})
+
+-- Sección: Sheriff
+MainTab:Section({Name = "Sheriff"})
+
+local aimbotEnabled = false
+local aimbotConnection = nil
+
+MainTab:Toggle({
+    Name = "Aimbot",
+    Flag = "Aimbot",
+    Callback = function(state)
+        aimbotEnabled = state
+        
+        if state then
+            aimbotConnection = RunService.RenderStepped:Connect(function()
+                local murderer = getMurderer()
+                if murderer and murderer.Character and murderer.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetPos = murderer.Character.HumanoidRootPart.Position + 
+                                     murderer.Character.HumanoidRootPart.Velocity * 0.125
+                    workspace.CurrentCamera.CFrame = CFrame.new(
+                        workspace.CurrentCamera.CFrame.Position, 
+                        targetPos
+                    )
+                end
+            end)
+        elseif aimbotConnection then
+            aimbotConnection:Disconnect()
+            aimbotConnection = nil
+        end
+    end
+})
+
+MainTab:Button({
+    Name = "Take Gun",
+    Callback = function()
+        local char = localPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        
+        local originalPos = char.HumanoidRootPart.Position
+        local nearestGun = nil
+        local minDistance = math.huge
+        
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj.Name == "GunDrop" and obj:IsA("BasePart") then
+                local distance = (char.HumanoidRootPart.Position - obj.Position).Magnitude
+                if distance < minDistance then
+                    nearestGun = obj
+                    minDistance = distance
+                end
+            end
+        end
+        
+        if nearestGun then
+            char.HumanoidRootPart.CFrame = nearestGun.CFrame
+            task.wait(0.1)
+            char.HumanoidRootPart.CFrame = CFrame.new(originalPos)
+        end
+    end
+})
+
+-- Sección: Innocent
+MainTab:Section({Name = "Innocent"})
+
+MainTab:Toggle({
+    Name = "Auto Gun TP",
+    Flag = "AutoGunTP",
+    Callback = function(state)
+        local running = state
+        
+        if state then
+            task.spawn(function()
+                while running do
+                    local char = localPlayer.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        local originalPos = char.HumanoidRootPart.Position
+                        local nearestGun = nil
+                        local minDistance = math.huge
+                        
+                        for _, obj in ipairs(workspace:GetDescendants()) do
+                            if obj.Name == "GunDrop" and obj:IsA("BasePart") then
+                                local distance = (char.HumanoidRootPart.Position - obj.Position).Magnitude
+                                if distance < minDistance then
+                                    nearestGun = obj
+                                    minDistance = distance
+                                end
+                            end
+                        end
+                        
+                        if nearestGun then
+                            char.HumanoidRootPart.CFrame = nearestGun.CFrame
+                            task.wait(0.1)
+                            char.HumanoidRootPart.CFrame = CFrame.new(originalPos)
+                        end
+                    end
+                    task.wait(1)
+                end
+            end)
+        end
+    end
+})
+
+-- Tab: Farm
+local FarmTab = Window:Tab({
+    Name = "Farm",
+    Icon = "rbxassetid://6723742952"
+})
+
+-- Auto Farm Coins
+local autoFarmEnabled = false
+local farmMode = "Nearest"
+local farmInterval = 3
+local lastFarmTime = 0
+local lastCoin = nil
+
+FarmTab:Toggle({
+    Name = "Auto Farm Coins",
+    Flag = "AutoFarm",
+    Callback = function(state)
+        autoFarmEnabled = state
+    end
+})
+
+FarmTab:Dropdown({
+    Name = "Farm Mode",
+    Flag = "FarmMode",
+    List = {"Nearest", "Random"},
+    Callback = function(value)
+        farmMode = value
+    end
+})
+
+FarmTab:Slider({
+    Name = "Farm Interval",
+    Flag = "FarmInterval",
+    Min = 1,
+    Max = 10,
+    Default = 3,
+    Callback = function(value)
+        farmInterval = value
+    end
+})
+
+-- Spin Bot
+local spinEnabled = false
+local spinSpeed = 5
+local spinConnection = nil
+
+FarmTab:Toggle({
+    Name = "Spin Bot",
+    Flag = "SpinBot",
+    Callback = function(state)
+        spinEnabled = state
+        
+        if state then
+            local hrp = (localPlayer.Character or localPlayer.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
+            spinConnection = RunService.RenderStepped:Connect(function()
+                if spinEnabled and hrp then
+                    hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
+                end
+            end)
+        elseif spinConnection then
+            spinConnection:Disconnect()
+            spinConnection = nil
+        end
+    end
+})
+
+FarmTab:Slider({
+    Name = "Spin Speed",
+    Flag = "SpinSpeed",
+    Min = 1,
+    Max = 50,
+    Default = 5,
+    Callback = function(value)
+        spinSpeed = value
+    end
+})
+
+-- Loop principal de farm
+RunService.Heartbeat:Connect(function()
+    if not autoFarmEnabled then return end
+    
+    local currentTime = tick()
+    if currentTime - lastFarmTime >= farmInterval then
+        local char = localPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        
+        local hrp = char.HumanoidRootPart
+        local coin = nil
+        
+        -- Buscar coins
+        local coinsFolder = workspace:FindFirstChild("CoinContainer") or getMap()
+        if coinsFolder then
+            coinsFolder = coinsFolder:FindFirstChild("CoinContainer")
+        end
+        
+        if coinsFolder then
+            if farmMode == "Nearest" then
+                local minDistance = 50
+                for _, coinPart in ipairs(coinsFolder:GetChildren()) do
+                    if coinPart:IsA("BasePart") and coinPart ~= lastCoin then
+                        local distance = (hrp.Position - coinPart.Position).Magnitude
+                        if distance < minDistance then
+                            coin = coinPart
+                            minDistance = distance
+                        end
+                    end
+                end
+            elseif farmMode == "Random" then
+                local availableCoins = {}
+                for _, coinPart in ipairs(coinsFolder:GetChildren()) do
+                    if coinPart:IsA("BasePart") and coinPart ~= lastCoin then
+                        table.insert(availableCoins, coinPart)
+                    end
+                end
+                if #availableCoins > 0 then
+                    coin = availableCoins[math.random(1, #availableCoins)]
+                end
+            end
+        end
+        
+        if coin then
+            hrp.CFrame = coin.CFrame
+            lastCoin = coin
+            lastFarmTime = currentTime
+        end
+    end
+end)
+
+-- Tab: Movement
+local MovementTab = Window:Tab({
+    Name = "Movement",
+    Icon = "rbxassetid://138210695069104"
+})
+
+-- Speed Hack
+local speedEnabled = false
+local speedValue = 9
+
+MovementTab:Toggle({
+    Name = "Speed Hack",
+    Flag = "SpeedHack",
+    Callback = function(state)
+        speedEnabled = state
+        
+        if state then
+            task.spawn(function()
+                while speedEnabled do
+                    pcall(function()
+                        local char = localPlayer.Character
+                        if char then
+                            local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+                            if humanoid then
+                                local delta = RunService.Heartbeat:Wait()
+                                char:TranslateBy(humanoid.MoveDirection * speedValue * delta)
+                            end
+                        end
+                    end)
+                    task.wait()
+                end
+            end)
+        end
+    end
+})
+
+MovementTab:Slider({
+    Name = "Speed Value",
+    Flag = "SpeedValue",
+    Min = 1,
+    Max = 100,
+    Default = 9,
+    Callback = function(value)
+        speedValue = value
+    end
+})
+
+-- High Jump
+local jumpEnabled = false
+local jumpPower = 200
+
+MovementTab:Toggle({
+    Name = "High Jump",
+    Flag = "HighJump",
+    Callback = function(state)
+        jumpEnabled = state
+        
+        if state then
+            task.spawn(function()
+                while jumpEnabled do
+                    pcall(function()
+                        local char = localPlayer.Character
+                        if char then
+                            local humanoid = char:FindFirstChildOfClass("Humanoid")
+                            if humanoid:GetState() == Enum.HumanoidStateType.Jumping then
+                                char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * 
+                                                               CFrame.new(0, jumpPower, 0)
+                            end
+                        end
+                    end)
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+MovementTab:Slider({
+    Name = "Jump Power",
+    Flag = "JumpPower",
+    Min = 1,
+    Max = 1000,
+    Default = 200,
+    Callback = function(value)
+        jumpPower = value
+    end
+})
+
+-- Tab: ESP
+local ESPTab = Window:Tab({
+    Name = "ESP",
+    Icon = "rbxassetid://9405930424"
+})
+
+local espSettings = {
+    Murder = false,
+    Sheriff = false,
+    Innocent = false,
+    Gun = false
+}
+
+local espHighlights = {}
+
+local function getPlayerRole(player)
+    if player == getMurderer() then
+        return "Murder"
+    elseif player == getSheriff() then
+        return "Sheriff"
+    else
+        return "Innocent"
+    end
+end
+
+local function getRoleColor(role)
+    if role == "Murder" then
+        return Color3.fromRGB(255, 0, 0)
+    elseif role == "Sheriff" then
+        return Color3.fromRGB(0, 150, 255)
+    else
+        return Color3.fromRGB(0, 255, 0)
+    end
+end
+
+local function updateESP()
+    -- Limpiar ESP antiguo
+    for _, highlight in pairs(espHighlights) do
+        if highlight then
+            highlight:Destroy()
+        end
+    end
+    espHighlights = {}
+    
+    -- Aplicar nuevo ESP
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character then
+            local role = getPlayerRole(player)
+            
+            if espSettings[role] then
+                local highlight = Instance.new("Highlight")
+                highlight.Name = "CHEIXHUB_ESP"
+                highlight.Adornee = player.Character
+                highlight.FillTransparency = 0.5
+                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                highlight.FillColor = getRoleColor(role)
+                highlight.OutlineColor = getRoleColor(role)
+                highlight.Parent = player.Character
+                
+                espHighlights[player.Name] = highlight
+            end
+        end
+    end
+end
+
+ESPTab:Toggle({
+    Name = "Murder ESP",
+    Flag = "MurderESP",
+    Callback = function(state)
+        espSettings.Murder = state
+        updateESP()
+    end
+})
+
+ESPTab:Toggle({
+    Name = "Sheriff ESP",
+    Flag = "SheriffESP",
+    Callback = function(state)
+        espSettings.Sheriff = state
+        updateESP()
+    end
+})
+
+ESPTab:Toggle({
+    Name = "Innocent ESP",
+    Flag = "InnocentESP",
+    Callback = function(state)
+        espSettings.Innocent = state
+        updateESP()
+    end
+})
+
+ESPTab:Toggle({
+    Name = "Gun ESP",
+    Flag = "GunESP",
+    Callback = function(state)
+        espSettings.Gun = state
+        
+        if state then
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "CHEIXHUB_GUN_ESP"
+            highlight.OutlineTransparency = 1
+            highlight.FillColor = Color3.fromRGB(0, 255, 0)
+            highlight.FillTransparency = 0.3
+            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            
+            local function checkGun(obj)
+                if obj.Name == "GunDrop" and obj:IsA("BasePart") then
+                    highlight.Adornee = obj
+                    highlight.Parent = CoreGui
+                    highlight.Enabled = true
+                end
+            end
+            
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                checkGun(obj)
+            end
+            
+            workspace.DescendantAdded:Connect(checkGun)
+            
+            espHighlights["Gun"] = highlight
+        else
+            if espHighlights["Gun"] then
+                espHighlights["Gun"]:Destroy()
+                espHighlights["Gun"] = nil
+            end
+        end
+    end
+})
+
+-- Actualizar ESP cuando se añaden jugadores
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        updateESP()
+    end)
+end)
+
+localPlayer.CharacterAdded:Connect(function()
+    updateESP()
+end)
+
+-- Tab: Misc
+local MiscTab = Window:Tab({
+    Name = "Misc",
+    Icon = "rbxassetid://86855135563483"
+})
+
+MiscTab:Section({Name = "Player"})
+
+MiscTab:Button({
+    Name = "Server Hop",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastefy.app/uTXUoORd/raw"))()
+    end
+})
+
+MiscTab:Button({
+    Name = "Rejoin",
+    Callback = function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId)
+    end
+})
+
+MiscTab:Button({
+    Name = "Reset Character",
+    Callback = function()
+        localPlayer.Character:BreakJoints()
+    end
+})
+
+-- Anti AFK
+local antiAFKEnabled = false
+local antiAFKConnection = nil
+
+MiscTab:Toggle({
+    Name = "Anti AFK",
+    Flag = "AntiAFK",
+    Callback = function(state)
+        antiAFKEnabled = state
+        
+        if state then
+            antiAFKConnection = localPlayer.Idled:Connect(function()
+                game:GetService("VirtualUser"):Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+                task.wait(1)
+                game:GetService("VirtualUser"):Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+            end)
+        elseif antiAFKConnection then
+            antiAFKConnection:Disconnect()
+            antiAFKConnection = nil
+        end
+    end
+})
+
+MiscTab:Section({Name = "Tools"})
+
+MiscTab:Button({
+    Name = "TP Tool",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastefy.app/ZLpXLAeF/raw"))()
+    end
+})
+
+MiscTab:Button({
+    Name = "Fly GUI",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/xuSMWfDu"))()
+    end
+})
+
+MiscTab:Button({
+    Name = "Inf Yield",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end
+})
+
+MiscTab:Button({
+    Name = "Dex Explorer",
+    Callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Classic-Dex-Explorer-21009"))()
+    end
+})
+
+MiscTab:Button({
+    Name = "Remote Spy",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/78n/SimpleSpy/main/SimpleSpySource.lua"))()
+    end
+})
+
+-- Función de espectar
+local function spectatePlayer(player)
+    if player and player.Character and player.Character:FindFirstChild("Humanoid") then
+        workspace.CurrentCamera.CameraSubject = player.Character.Humanoid
+        CHEIXHUB_UI:Notify({
+            Title = "CHEIXHUB",
+            Content = "Now spectating: " .. player.Name,
+            Duration = 3
+        })
+    end
+end
+
+MiscTab:Section({Name = "Spectate"})
+
+MiscTab:Button({
+    Name = "Spectate Murderer",
+    Callback = function()
+        local murderer = getMurderer()
+        if murderer then
+            spectatePlayer(murderer)
+        else
+            CHEIXHUB_UI:Notify({
+                Title = "CHEIXHUB",
+                Content = "No murderer found!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+MiscTab:Button({
+    Name = "Spectate Sheriff",
+    Callback = function()
+        local sheriff = getSheriff()
+        if sheriff then
+            spectatePlayer(sheriff)
+        else
+            CHEIXHUB_UI:Notify({
+                Title = "CHEIXHUB",
+                Content = "No sheriff found!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+MiscTab:Button({
+    Name = "Stop Spectating",
+    Callback = function()
+        if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+            workspace.CurrentCamera.CameraSubject = localPlayer.Character.Humanoid
+            CHEIXHUB_UI:Notify({
+                Title = "CHEIXHUB",
+                Content = "Stopped spectating",
+                Duration = 3
+            })
+        end
+    end
+})
+
+-- Teleportaciones
+MiscTab:Section({Name = "Teleports"})
+
+MiscTab:Button({
+    Name = "TP to Lobby",
+    Callback = function()
+        local char = localPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = CFrame.new(-108.5, 142, 0.6)
+        end
+    end
+})
+
+MiscTab:Button({
+    Name = "TP to Map",
+    Callback = function()
+        local map = getMap()
+        if map and map:FindFirstChild("Spawns") then
+            local char = localPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.CFrame = map.Spawns.Spawn.CFrame
+            end
+        end
+    end
+})
+
+-- Notificación de inicio
+task.wait(1)
+CHEIXHUB_UI:Notify({
+    Title = "CHEIXHUB",
+    Content = "Loaded successfully!",
+    Duration = 5
+})
+
+print("========================================")
+print("CHEIXHUB - MM2 Script Loaded!")
+print("Based on VexonHub")
+print("UI: https://github.com/3345-c-a-t-s-u-s/NOTHING")
+print("========================================")
